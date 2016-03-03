@@ -5,7 +5,8 @@
 
 #define SAMPLE_RATE   (44100)
 #define FRAMES_PER_BUFFER  (64)
-#define TABLE_SIZE   (400)
+#define TABLE_SIZE   (200)
+#define AMPLITUDE 1
 
 #ifndef M_PI
 #define M_PI  (3.14159265)
@@ -22,7 +23,7 @@ public:
 	bool stop();
 	
 private:
-	 int paCallbackMethod(const void *inputBuffer, 
+	int paCallbackMethod(const void *inputBuffer, 
 		void *outputBuffer,
 		unsigned long framesPerBuffer,
 		const PaStreamCallbackTimeInfo* timeInfo,
@@ -38,6 +39,9 @@ private:
 	void paStreamFinishedMethod();
 	static void paStreamFinished(void* userData);
 	
+   	void buffergen(float* out, 
+		const void* inputbuffer, unsigned long framesPerbuffer);
+
 	//Member Variables
 	PaStream *stream;
 	float sine[TABLE_SIZE];

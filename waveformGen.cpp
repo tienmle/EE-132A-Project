@@ -16,7 +16,7 @@
         /* initialise sinusoidal wavetable */
         for( int i=0; i<TABLE_SIZE; i++ )
         {
-            sine[i] = (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
+            sine[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. ));
         }
 
         sprintf( message, "No Message" );
@@ -31,7 +31,7 @@
             return false;
         }
 
-        outputParameters.channelCount = 2;       /* stereo output */
+        outputParameters.channelCount = 1;       /* mono output */
         outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
         outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
         outputParameters.hostApiSpecificStreamInfo = NULL;
@@ -99,29 +99,23 @@
     }
 
 
-    /* The instance callback, where we have access to every method/variable in object of class Sine */
+    /* The instance callback, where we have access to every method/variable in object of the class */
     int BPSK_modulator::paCallbackMethod(const void *inputBuffer, void *outputBuffer,
         unsigned long framesPerBuffer,
         const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags)
     {
         float *out = (float*)outputBuffer;
-        unsigned long i;
 
         (void) timeInfo; /* Prevent unused variable warnings. */
         (void) statusFlags;
         (void) inputBuffer;
 
-        for( i=0; i<framesPerBuffer; i++ )
-        {
-            *out++ = sine[phase];  //output buffer writes to mono output
-            phase += 1;
-            if( phase >= TABLE_SIZE ) phase -= TABLE_SIZE;
-        }
-
+	buffergen(out, inputBuffer, framesPerBuffer);
         return paContinue;
 
     }
+
 
     /* This routine will be called by the PortAudio engine when audio is needed.
     ** It may called at interrupt level on some machines so don't do anything
@@ -133,14 +127,13 @@
         PaStreamCallbackFlags statusFlags,
         void *userData )
     {
-        /* Here we cast userData to Sine* type so we can call the instance method paCallbackMethod, we can do that since 
+        /* Here we cast userData to BPSK_modulator* type so we can call the instance method paCallbackMethod, we can do that since 
            we called Pa_OpenStream with 'this' for userData */
         return ((BPSK_modulator*)userData)->paCallbackMethod(inputBuffer, outputBuffer,
             framesPerBuffer,
             timeInfo,
             statusFlags);
     }
-
 
     void BPSK_modulator::paStreamFinishedMethod()
     {
@@ -154,6 +147,22 @@
     {
         return ((BPSK_modulator*)userData)->paStreamFinishedMethod();
     }
+
+
+//This function is used to generate the output buffer for the paCallbackMethod function
+    void BPSK_modulator::buffergen(float* out, const void* inputbuffer,
+		unsigned long framesPerBuffer)
+    {
+        unsigned long i;
+        for( i=0; i<framesPerBuffer; i++ )
+        {
+            *out++ = sine[phase];  //output buffer writes to mono output
+            phase += 1;
+            if( phase >= TABLE_SIZE ) phase -= TABLE_SIZE;
+        }
+    }
+
+
 
 
 
