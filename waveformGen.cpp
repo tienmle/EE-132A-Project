@@ -169,7 +169,7 @@
 			0testInput[j] = 1;
 		//printf("%d\n", testInput[j]);
 	}
-
+ 
         for( i=0; i<framesPerBuffer; i++ )
         {
 	    printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), BPSK_phase, phase);
