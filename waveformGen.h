@@ -3,9 +3,11 @@
 
 #include "portaudio.h"
 
-#define SAMPLE_RATE   (44100)
-#define FRAMES_PER_BUFFER  (64)
-#define TABLE_SIZE   (200)
+#define SAMPLE_RATE   (44010)
+#define FRAMES_PER_BUFFER  (128)
+// Output frequency ~= Sample Rate / Frames_Per_Buffer
+// The output frequency isn't exactly represented by the sample above, need to determine why
+#define TABLE_SIZE   (128)
 #define AMPLITUDE 1
 
 #ifndef M_PI
@@ -39,13 +41,18 @@ private:
 	void paStreamFinishedMethod();
 	static void paStreamFinished(void* userData);
 	
-   	void buffergen(float* out, 
+   	void symbolgen(float* out, 
 		const void* inputbuffer, unsigned long framesPerbuffer);
 
 	//Member Variables
 	PaStream *stream;
-	float sine[TABLE_SIZE];
+	float sine0[TABLE_SIZE];
+	float sine1[TABLE_SIZE];
 	int phase;
+	//BPSK Implementation
+	int prev_input;
+	int counter;
+	bool BPSK_phase;
 	char message[20];
 	};
 

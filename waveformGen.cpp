@@ -10,13 +10,16 @@
 #include <math.h>
 #include "portaudio.h"
 #include "waveformGen.h"
+#include <cassert>
 
-    BPSK_modulator::BPSK_modulator() : stream(0), phase(0)
+    BPSK_modulator::BPSK_modulator() : stream(0), phase(0),prev_input(0),counter(0), BPSK_phase(false) 
     {
-        /* initialise sinusoidal wavetable */
+	assert(TABLE_SIZE%2 == 0);
+        /* initialise sinusoidal wavetable for 0 and 1 */
         for( int i=0; i<TABLE_SIZE; i++ )
         {
-            sine[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. ));
+            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. ));
+            sine0[i] = (float)(AMPLITUDE * sin( ((double)( (i+(TABLE_SIZE/2)) % TABLE_SIZE )/(double)TABLE_SIZE) * M_PI * 2. ));
         }
 
         sprintf( message, "No Message" );
@@ -111,7 +114,7 @@
         (void) statusFlags;
         (void) inputBuffer;
 
-	buffergen(out, inputBuffer, framesPerBuffer);
+	symbolgen(out, inputBuffer, framesPerBuffer);
         return paContinue;
 
     }
@@ -150,17 +153,55 @@
 
 
 //This function is used to generate the output buffer for the paCallbackMethod function
-    void BPSK_modulator::buffergen(float* out, const void* inputbuffer,
+//We will generate the symbols for BPSK in here based on the input buffer
+//We will keep track of a "state" variable
+    void BPSK_modulator::symbolgen(float* out, const void* inputbuffer,
 		unsigned long framesPerBuffer)
     {
         unsigned long i;
+	//Test code
+
+	int testInput[framesPerBuffer];
+	for(unsigned long j = 0; j < framesPerBuffer; j++){
+		if(j%4 == 0)
+			testInput[j] = 0;
+		else
+			0testInput[j] = 1;
+		//printf("%d\n", testInput[j]);
+	}
+
         for( i=0; i<framesPerBuffer; i++ )
         {
-            *out++ = sine[phase];  //output buffer writes to mono output
+	    printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), BPSK_phase, phase);
+	    //output buffer writes to mono output
+
+	    if(BPSK_phase == 1)
+	            *out++ = sine1[phase];
+	    else
+		    *out++ = sine0[phase];  
+
             phase += 1;
-            if( phase >= TABLE_SIZE ) phase -= TABLE_SIZE;
+
+            if( phase >= TABLE_SIZE ){ 
+		//Reached the end of the current symbol
+		//Move the current bit to the next symbol		
+		prev_input = testInput[counter];
+		counter = (counter + 1)%framesPerBuffer;
+
+		//Reset the sinusoid
+		phase -= TABLE_SIZE;
+		//BPSK: Shift the phase by 180 degrees if the input signal changes
+		if( (prev_input^testInput[counter]) == 1){
+			//Set the sinusoid to the BPSK_Phase
+			BPSK_phase = testInput[counter];
+			printf("Output flipped, the Phase is now: %d \n", BPSK_phase);
+		}
+		};
+
         }
     }
+
+
 
 
 
