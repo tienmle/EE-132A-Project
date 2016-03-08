@@ -4,30 +4,30 @@
 #include "portaudio.h"
 #include "waveformGen.h"
 
-#define NUM_SECONDS 5
+#define NUM_SECONDS 2
 /*******************************************************************/
 int main(void);
 int main(void)
 {
     PaError err;
-    BPSK_modulator bpsk;
+    FSK_modulator fsk;
 
     printf("PortAudio Test: output sine wave. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
     
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
 
-    if (bpsk.open(Pa_GetDefaultOutputDevice()))
+    if (fsk.open(Pa_GetDefaultOutputDevice()))
     {
-        if (bpsk.start())
+        if (fsk.start())
         {
             printf("Play for %d seconds.\n", NUM_SECONDS );
             Pa_Sleep( NUM_SECONDS * 1000 );
 
-            bpsk.stop();
+            fsk.stop();
         }
 
-        bpsk.close();
+        fsk.close();
     }
 
     Pa_Terminate();

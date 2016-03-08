@@ -15,10 +15,10 @@
 #endif
 
 
-class BPSK_modulator{
+class FSK_modulator{
 
 public:
-	BPSK_modulator();
+	FSK_modulator();
 	bool open(PaDeviceIndex index);		
 	bool close();
 	bool start();
@@ -49,10 +49,10 @@ private:
 	float sine0[TABLE_SIZE];
 	float sine1[TABLE_SIZE];
 	int phase;
-	//BPSK Implementation
-	int prev_input;
+	//FSK Implementation
 	int counter;
-	bool BPSK_phase;
+	bool FSK_phase;
+
 	char message[20];
 	};
 
