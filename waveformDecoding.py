@@ -72,6 +72,36 @@ def plot_freqDomain(data, fs, figTitle, figNum):
 	plt.xlim(xmin=0, xmax=2000)
 	plt.ylim(ymin=0)
 
+def FSK_decision(signal, fs, freq1, freq2):
+	t = np.linspace(0, len(signal)/fs, num=len(data))
+	cos_mix1 = np.cos(freq1*t)
+	sin_mix1 = np.sin(freq1*t)
+
+	i_1 = signal * cos_mix1
+	q_1 = signal * sin_mix1
+	i_sum1 = scipy.integrate.trapz(i_1)
+	q_sum1 = scipy.integrate.trapz(q_1)
+
+	Amplitude1 = np.sqrt(i_sum1**2 + q_sum1**2)
+
+	cos_mix2 = np.cos(freq2*t)
+	sin_mix2 = np.sin(freq2*t)
+
+	i_2 = signal * cos_mix2
+	q_2 = signal * sin_mix2
+	i_sum2 = scipy.integrate.trapz(i_2)
+	q_sum2 = scipy.integrate.trapz(q_2)
+
+	Amplitude2 = np.sqrt(i_sum2**2 + q_sum2**2)
+
+	out = Amplitude1 - Amplitude2
+	if out > 0:
+		res = 1
+	if out < 0:
+		res = 0
+	return res
+
+
 # CONSTANTS
 #LPF Parameters
 order = 10
@@ -139,64 +169,7 @@ y_bpf0_fft = fft(y_bpf0)
 #Decision regions
 #Let's try using quadrature non-coherent detection
 #Page 12 of http://www.electronics.dit.ie/staff/amoloney/lecture-26.pdf
-#y = clip(y)
 
-pi = np.pi
-t = np.linspace(0, len(data)/fs, num=len(data))
-cos_mix1 = np.cos(550*t)
-sin_mix1 = np.sin(550*t)
-
-X = y * cos_mix1
-Y = y * sin_mix1
-
-X_int = scipy.integrate.trapz(X) ** 2
-Y_int = scipy.integrate.trapz(Y) ** 2
-print X_int
-print Y_int
-
-X_low = butter_lowpass_filter(X, 500, 2*fs, 6)
-Y_low = butter_lowpass_filter(Y, 500, 2*fs, 6)
-Amplitude1 = 2* np.sqrt(X_int + Y_int)
-
-# plot_freqDomain(X_low, fs, "Frequency Spectrum of " + filename + " without filtering", 2)
-
-
-#plt.figure(10)
-#plt.plot(t, Amplitude)
-
-#plt.figure(11)
-
-cos_mix2 = np.cos(1100*t)
-sin_mix2 = np.sin(1100*t)
-
-X = y * cos_mix2
-Y = y * sin_mix2
-
-X_int = scipy.integrate.trapz(X) ** 2
-Y_int = scipy.integrate.trapz(Y) ** 2
-print X_int
-print Y_int
-
-X_low = butter_highpass_filter(X, 900, fs, 4)
-Y_low = butter_highpass_filter(Y, 900, fs, 4)
-
-# plot_freqDomain(Y_low, fs, "Frequency Spectrum of " + filename + " without filtering", 3)
-
-
-Amplitude2 = 2* np.sqrt(X_int + Y_int)
-
-print Amplitude1
-print Amplitude2
-print Amplitude1 - Amplitude2
-#lt.plot(t, Amplitude)
-
-
-plt.figure(3)
-plt.plot(t,cos_mix1)
-
-plt.figure(4)
-plt.plot(t,cos_mix2)
-
-
+print FSK_decision(y, fs, 550, 1100)
 
 plt.show()
