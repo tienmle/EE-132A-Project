@@ -2,13 +2,14 @@
 #define WAVEFORMGEN_H
 
 #include "portaudio.h"
+#include <string>
 
-#define SAMPLE_RATE   (44010)
+#define SAMPLE_RATE   (22050)
 #define FRAMES_PER_BUFFER  (128)
 // Output frequency ~= Sample Rate / Frames_Per_Buffer
 // The output frequency isn't exactly represented by the sample above, need to determine why
-#define TABLE_SIZE   (128)
-#define AMPLITUDE 1
+#define TABLE_SIZE   (11025)
+#define AMPLITUDE 2
 
 #ifndef M_PI
 #define M_PI  (3.14159265)
@@ -18,7 +19,8 @@
 class FSK_modulator{
 
 public:
-	FSK_modulator();
+	FSK_modulator(std::string binary_message);
+	~FSK_modulator();
 	bool open(PaDeviceIndex index);		
 	bool close();
 	bool start();
@@ -42,17 +44,27 @@ private:
 	static void paStreamFinished(void* userData);
 	
    	void symbolgen(float* out, 
-		const void* inputbuffer, unsigned long framesPerbuffer);
+		const char* inputbuffer, unsigned long framesPerbuffer);
 
 	//Member Variables
 	PaStream *stream;
+	
+
+	//Message Variable (stored as a C-string)
+	char* tx_message;
+	size_t msg_size;
+	size_t tx_pos;
+
+
+	//Sine Tables
 	float sine0[TABLE_SIZE];
 	float sine1[TABLE_SIZE];
 	int phase;
+	
 	//FSK Implementation
 	int toggle;
 	int counter;
-	bool FSK_phase;
+	bool FSK_symbol;
 
 	char message[20];
 	};

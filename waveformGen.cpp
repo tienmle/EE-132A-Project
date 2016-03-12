@@ -11,20 +11,38 @@
 #include "portaudio.h"
 #include "waveformGen.h"
 #include <cassert>
+#include <string>
+#include <cstring>
+#include <iostream>
 
-    FSK_modulator::FSK_modulator() : stream(0), phase(0),toggle(0), counter(0), FSK_phase(false) 
+    FSK_modulator::FSK_modulator(std::string binarymessage) : stream(0), phase(0),toggle(0), counter(0), FSK_symbol(false) 
     {
-	    assert(TABLE_SIZE%2 == 0);
+	    //assert(TABLE_SIZE%2 == 0);
         /* initialise sinusoidal wavetable for 0 and 1 */
+
+        //Duration of pulse is Table_size/samplerate
         for( int i=0; i<TABLE_SIZE; i++ )
         {
-            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 2. ));
-            sine0[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.));
+            //printf("i = %d\n", i);
+            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 1000. ));
+            sine0[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 500.));
         }
 
+        //Generate the container for the message to be sent
+        tx_message = new char[binarymessage.length()];
+
+        for (size_t index = 0; index < binarymessage.length(); index++){
+            tx_message[index] = binarymessage[index];
+        }
+        tx_message[binarymessage.length()] = '\0';
+        msg_size = strlen(tx_message);
+        //printf("%s", tx_message);
         sprintf( message, "No Message" );
     }
 
+    FSK_modulator::~FSK_modulator(){
+        delete tx_message;
+    }
     bool FSK_modulator::open(PaDeviceIndex index)
     {
         PaStreamParameters outputParameters;
@@ -112,9 +130,10 @@
 
         (void) timeInfo; /* Prevent unused variable warnings. */
         (void) statusFlags;
-        (void) inputBuffer;
 
-	    symbolgen(out, inputBuffer, framesPerBuffer);
+        //Hacky, but we will just directly use the tx_message object here
+
+	    symbolgen(out, tx_message, framesPerBuffer);
         return paContinue;
 
     }
@@ -155,46 +174,55 @@
 //This function is used to generate the output buffer for the paCallbackMethod function
 //We will generate the symbols for FSK in here based on the input buffer
 //We will keep track of a "state" variable
-    void FSK_modulator::symbolgen(float* out, const void* inputbuffer,
+    void FSK_modulator::symbolgen(float* out, const char* inputbuffer,
 		unsigned long framesPerBuffer)
     {
         unsigned long i;
 	//Test code to generate an input sequence
+
     	int testInput[framesPerBuffer];
     	for(unsigned long j = 0; j < framesPerBuffer; j++) {
-    		if(j < 32)
+    		if(j % 2 == 1)
     			testInput[j] = 1;
     		else
     			testInput[j] = 0;
     		//printf("%d\n", testInput[j]);
     	}
- 
+        
+        //Set a symbol to play for a certain amount of time
+        //symbol_length to be set to 5 ms
+        int symbol_length = SAMPLE_RATE*double(50)/1000;
         for( i=0; i<framesPerBuffer; i++ )
         {
-	    //printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_phase, phase);
+	    //printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_symbol, phase);
 	    //output buffer writes to mono output
-
-            if(FSK_phase == 0)
+            //printf("%f\n", sine0[phase]);
+            if(FSK_symbol == 0)
                 *out++ = sine0[phase];
     	    else
     		    *out++ = sine1[phase];  
 
             phase++;
 
-            if( phase >= TABLE_SIZE ){ 
+            if( phase >= symbol_length ){ 
 		//Reached the end of the current symbol
 		//Move the current bit to the next symbol		
-                toggle = !toggle;
-        		counter = (counter + 1)%framesPerBuffer;
-
+                printf("Reached end of table, counter is = %d\n", counter);
         		//Reset the sinusoid
-        		phase -= TABLE_SIZE;
+        		phase -= symbol_length;
         		
-        		if(FSK_phase != testInput[counter])
-        			printf("Output flipped!\n");
+        		// if(FSK_symbol != inputbuffer[counter] - '0')
 
-        		FSK_phase = testInput[counter];
+        		// 	//printf("Output flipped!\n");
 
+        		// FSK_symbol = inputbuffer[counter] - '0';
+          //       //Counter will keep looping the message
+          //       counter = (counter + 1)%msg_size;
+
+
+                FSK_symbol = testInput[counter];
+                counter = (counter + 1) %framesPerBuffer;
+                //printf("Output symbol: %d, %d symbols left to print\n", FSK_symbol, msg_size - counter );
 
 	             }
     	}

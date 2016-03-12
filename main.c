@@ -23,6 +23,11 @@ int main(int argc, char* argv[]);
 
 int main(int argc, char* argv[])
 {
+    if(argc < 2){
+        cout << "Please include a textfile to transmit!" << endl;
+        return -1;
+    }
+
     std::string file_name = argv[1];
     std::ifstream file(file_name.c_str());
 
@@ -33,13 +38,11 @@ int main(int argc, char* argv[])
 
     string message;
     string temp;
+
     while(getline(file,temp)){
         message += '\n' + temp;
     }
     //cout << message << endl;
-
-    PaError err;
-    FSK_modulator fsk;
 
     //Take message from string and transform into binary (ASCII)
     string binary_message; // raw text data
@@ -64,6 +67,9 @@ int main(int argc, char* argv[])
 
     // PortAudio Code
     printf("PortAudio: output FSK Signal. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+
+    PaError err;
+    FSK_modulator fsk(binary_message);
     
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
