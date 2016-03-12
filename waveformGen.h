@@ -50,6 +50,7 @@ private:
 	float sine1[TABLE_SIZE];
 	int phase;
 	//FSK Implementation
+	int toggle;
 	int counter;
 	bool FSK_phase;
 

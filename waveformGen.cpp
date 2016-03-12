@@ -12,14 +12,14 @@
 #include "waveformGen.h"
 #include <cassert>
 
-    FSK_modulator::FSK_modulator() : stream(0), phase(0), counter(0), FSK_phase(false) 
+    FSK_modulator::FSK_modulator() : stream(0), phase(0),toggle(0), counter(0), FSK_phase(false) 
     {
-	assert(TABLE_SIZE%2 == 0);
+	    assert(TABLE_SIZE%2 == 0);
         /* initialise sinusoidal wavetable for 0 and 1 */
         for( int i=0; i<TABLE_SIZE; i++ )
         {
-            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 1.5 ));
-            sine0[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. ));
+            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 2. ));
+            sine0[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.));
         }
 
         sprintf( message, "No Message" );
@@ -114,7 +114,7 @@
         (void) statusFlags;
         (void) inputBuffer;
 
-	symbolgen(out, inputBuffer, framesPerBuffer);
+	    symbolgen(out, inputBuffer, framesPerBuffer);
         return paContinue;
 
     }
@@ -159,34 +159,32 @@
 		unsigned long framesPerBuffer)
     {
         unsigned long i;
-
-
 	//Test code to generate an input sequence
-	int testInput[framesPerBuffer];
-	for(unsigned long j = 0; j < framesPerBuffer; j++) {
-		if(j < 32)
-			testInput[j] = 0;
-		else
-			testInput[j] = 1;
-		//printf("%d\n", testInput[j]);
-	}
+    	int testInput[framesPerBuffer];
+    	for(unsigned long j = 0; j < framesPerBuffer; j++) {
+    		if(j < 32)
+    			testInput[j] = 1;
+    		else
+    			testInput[j] = 0;
+    		//printf("%d\n", testInput[j]);
+    	}
  
         for( i=0; i<framesPerBuffer; i++ )
         {
-	    printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_phase, phase);
+	    //printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_phase, phase);
 	    //output buffer writes to mono output
 
-    	    if(FSK_phase == 1)
+            if(FSK_phase == 0)
                 *out++ = sine0[phase];
     	    else
     		    *out++ = sine1[phase];  
 
-            phase += 1;
+            phase++;
 
             if( phase >= TABLE_SIZE ){ 
 		//Reached the end of the current symbol
 		//Move the current bit to the next symbol		
-
+                toggle = !toggle;
         		counter = (counter + 1)%framesPerBuffer;
 
         		//Reset the sinusoid
@@ -194,7 +192,7 @@
         		
         		if(FSK_phase != testInput[counter])
         			printf("Output flipped!\n");
-        		//FSK: Shift the phase by 180 degrees if the input signal changes
+
         		FSK_phase = testInput[counter];
 
 
