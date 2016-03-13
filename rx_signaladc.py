@@ -8,24 +8,16 @@ import wave
 import sys
 
 # CONSTANTS
-#LPF Parameters
-order = 10
-cutoff = 1300
-
-#BPF Parameters for center frequency of 1100
 order = 3
-
+cutoff = 1400;
 freq1 = 900
-cutoffH_1 = 1000
-cutoffL_1 = 800
 freq0 = 400
-cutoffH_0 = 600
-cutoffL_0 = 200
 
 symbols_per_second = 24
 sample_time_ms = 1000/symbols_per_second
 samples_per_symbol = 22050/sample_time_ms
-#Declaration of filters
+
+#Declaration of butterworth filters
 def butter_lowpass(cutoff, fs, order=5):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
@@ -48,17 +40,7 @@ def butter_highpass_filter(data, cutoff, fs, order):
     y = lfilter(b, a, data)
     return y
 
-def butter_bandpass(lowf, highf, fs, order=5):
-	nyq = 0.5 * fs
-	low = lowf / nyq
-	high = highf / nyq
-	b, a = butter(order, [low, high], btype = 'band' )
-	return b, a
-
-def butter_bandpass_filter(data, cutoffL, cutoffH, fs, order=5):
-	b, a = butter_bandpass(cutoffL, cutoffH, fs, order=order)
-	y = lfilter(b, a, data)
-	return y
+#Signal plotting functions-- useful for debugging
 
 def plot_timeDomain(x_time, y_signal, figTitle, figNum, x_min=0, x_max=1):
 	plt.figure(figNum)
@@ -88,13 +70,18 @@ def plot_freqDomain(data, fs, figTitle, figNum):
 	plt.xlim(xmin=0, xmax=4000)
 	plt.ylim(ymin=0)
 
+# Baseband conversion and signal detection
+# i and q are quadrature (90 degrees out of phase) signals
+
 def FSK_decision(signal, fs, freq0, freq1):
 	t = np.linspace(0, len(signal)/float(fs), num=len(signal))
 	order=6
 	cos_mix1 = np.cos(freq0*2*np.pi*t)
 	sin_mix1 = np.sin(freq0*2*np.pi*t)
+
 	# plot_timeDomain(t, signal, "Plot of signal of " + filename + " in time domain", 3)
 	# plot_freqDomain(signal, fs, "Plot of signal of " + filename + " in frequency domain", 4)
+
 	i_1 = signal * cos_mix1
 	q_1 = signal * sin_mix1
 
@@ -111,7 +98,6 @@ def FSK_decision(signal, fs, freq0, freq1):
 
 	i_2 = signal * cos_mix2
 	q_2 = signal * sin_mix2
-
 
 	i_2 = butter_lowpass_filter(i_2, 300, 2*fs, order)
 	q_2 = butter_lowpass_filter(q_2, 300, 2*fs, order)
@@ -137,6 +123,7 @@ def FSK_decision(signal, fs, freq0, freq1):
 		res = 1
 	return res
 
+#Divide signal by its average-- goal is to minimize the differences in amplitude
 def normalize_signal(data):
 	mean_data = np.mean(abs(y))
 	data_norm = [float(x/mean_data) for x in y]
@@ -171,61 +158,41 @@ def trim_waveform(signal, fs):
 		else:
 			break
 	return start, end
-	
-
-
 
 #Timing recovery???
 
 
 #Get WAV file, read into data
 filename = str(sys.argv[1])
-
 fs, data = wavfile.read(filename)
 # data = data[0:(fs*1)] #Analyze only one second
-fs = fs/2 #Don't know why this works, but it works
+#fs = fs/2 #Don't know why this works, but it works
 
-Time = np.linspace(0, len(data)/(2*fs), num=len(data))
+Time = np.linspace(0, len(data)/(fs), num=len(data))
 y = butter_lowpass_filter(data, cutoff, fs, order)
 
 #normalize the amplitude of the signal
 y_norm = normalize_signal(y)
 
-start, end = trim_waveform(y_norm, 2*fs)
+start, end = trim_waveform(y_norm, fs)
 print start, end
 y_trimmed = y_norm[start:end]
-y_time = np.linspace(0, len(y_trimmed)/(2*fs), num=len(y_trimmed))
+y_time = np.linspace(0, len(y_trimmed)/(fs), num=len(y_trimmed))
 
 #break the signal into its constituent samples
-sampled_data = sample(y_trimmed, 2*fs, sample_time_ms)
+sampled_data = sample(y_trimmed, fs, sample_time_ms)
 print np.shape(sampled_data)
-# plot_timeDomain(Time, data, "Plot of unfiltered signal of " + filename + " in time domain", 0)
-plot_timeDomain(y_time, y_trimmed, "Plot of filtered signal of " + filename + " in time domain", 1, 0,len(y_trimmed)/(2*fs))
 
+
+# plot_timeDomain(Time, data, "Plot of unfiltered signal of " + filename + " in time domain", 0)
+plot_timeDomain(y_time, y_trimmed, "Plot of filtered signal of " + filename + " in time domain", 1, 0, len(y_trimmed)/(fs))
 # #Plot of frequency spectrum of original file
 # plot_freqDomain(data, fs, "Frequency Spectrum of " + filename + " without filtering", 2)
 # plot_freqDomain(y_norm, fs, "Frequency Spectrum of " + filename + " with filtering", 3)
 
-
-#Plot of bandpass signals
-y_bpf1 = butter_bandpass_filter(y, cutoffL_1, cutoffH_1, fs, order)
-y_bpf0 = butter_bandpass_filter(y, cutoffL_0, cutoffH_0, fs, order)
-
-# plot_timeDomain(Time, y_bpf1, "Plot of bandpass filtered signal of " + filename + " for bit = 1", 3)
-# plot_timeDomain(Time, y_bpf0, "Plot of bandpass filtered signal of " + filename + " for bit = 0", 4)
-
-
-#Plot of bandpass signals in frequency domain
-y_bpf1_fft = fft(y_bpf1)
-y_bpf0_fft = fft(y_bpf0)
-
-# plot_freqDomain(y_bpf1_fft, fs, "Frequency Spectrum of " + filename + " with bandpass around bit=1", 5)
-# plot_freqDomain(y_bpf0_fft, fs, "Frequency Spectrum of " + filename + " with bandpass around bit=0", 6)
-
 #Decision regions
-#Let's try using quadrature non-coherent detection
+#Using quadrature non-coherent detection
 #Page 12 of http://www.electronics.dit.ie/staff/amoloney/lecture-26.pdf
-norm_data = normalize_signal(data)
 
 result = []
 with open('rx_msg.txt', 'w') as f:
