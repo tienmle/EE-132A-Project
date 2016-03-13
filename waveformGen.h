@@ -4,12 +4,15 @@
 #include "portaudio.h"
 #include <string>
 
-#define SAMPLE_RATE   (22050)
 #define FRAMES_PER_BUFFER  (128)
-// Output frequency ~= Sample Rate / Frames_Per_Buffer
-// The output frequency isn't exactly represented by the sample above, need to determine why
+
+//Each sine table can play 2 times per second
+#define SAMPLE_RATE   (22050)
 #define TABLE_SIZE   (11025)
-#define AMPLITUDE 2
+#define AMPLITUDE0 0.7
+#define AMPLITUDE1 9
+#define SYMBOLS_PER_SECOND 24
+
 
 #ifndef M_PI
 #define M_PI  (3.14159265)

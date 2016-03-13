@@ -15,17 +15,16 @@
 #include <cstring>
 #include <iostream>
 
-    FSK_modulator::FSK_modulator(std::string binarymessage) : stream(0), phase(0),toggle(0), counter(0), FSK_symbol(false) 
+    FSK_modulator::FSK_modulator(std::string binarymessage) : stream(0), phase(0), toggle(1)
     {
-	    //assert(TABLE_SIZE%2 == 0);
         /* initialise sinusoidal wavetable for 0 and 1 */
 
         //Duration of pulse is Table_size/samplerate
         for( int i=0; i<TABLE_SIZE; i++ )
         {
             //printf("i = %d\n", i);
-            sine1[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 1000. ));
-            sine0[i] = (float)(AMPLITUDE * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 500.));
+            sine1[i] = (float)(AMPLITUDE1 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 900. ));
+            sine0[i] = (float)(AMPLITUDE0 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 400.));
         }
 
         //Generate the container for the message to be sent
@@ -36,7 +35,12 @@
         }
         tx_message[binarymessage.length()] = '\0';
         msg_size = strlen(tx_message);
-        //printf("%s", tx_message);
+
+        printf( "Size of message: %u\n", msg_size);
+        printf(tx_message);
+        //Initialization of the output state
+        FSK_symbol = tx_message[0] - '0';
+        counter = 1;
         sprintf( message, "No Message" );
     }
 
@@ -180,48 +184,52 @@
         unsigned long i;
 	//Test code to generate an input sequence
 
-    	int testInput[framesPerBuffer];
-    	for(unsigned long j = 0; j < framesPerBuffer; j++) {
-    		if(j % 2 == 1)
-    			testInput[j] = 1;
-    		else
-    			testInput[j] = 0;
-    		//printf("%d\n", testInput[j]);
-    	}
+    	// int testInput[framesPerBuffer];
+    	// for(unsigned long j = 0; j < framesPerBuffer; j++) {
+    	// 	if(j % 2 == 1)
+    	// 		testInput[j] = 0;
+    	// 	else
+    	// 		testInput[j] = 1;
+    	// 	//printf("%d\n", testInput[j]);
+    	// }
         
         //Set a symbol to play for a certain amount of time
-        //symbol_length to be set to 5 ms
-        int symbol_length = SAMPLE_RATE*double(50)/1000;
+        //symbol_length is the amount of time each symbol will be played for
+        //ms per symbol = 1000 ms / symbols/sec
+        //This is set by multiplying sample rate (samples/sec) * desired time
+        int symbol_length = SAMPLE_RATE/SYMBOLS_PER_SECOND;
         for( i=0; i<framesPerBuffer; i++ )
         {
-	    //printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_symbol, phase);
-	    //output buffer writes to mono output
-            //printf("%f\n", sine0[phase]);
-            if(FSK_symbol == 0)
-                *out++ = sine0[phase];
-    	    else
-    		    *out++ = sine1[phase];  
+	        //printf("Output: %f, Input Bit: %d, Phase: %d\n", *(out-1), FSK_symbol, phase);
+
+            if(toggle == 1){
+                if(FSK_symbol == 0)
+                    *out++ = sine0[phase];
+        	    else
+        		    *out++ = sine1[phase];  
+            } else {
+                *out++ = 0;
+            }
 
             phase++;
 
-            if( phase >= symbol_length ){ 
-		//Reached the end of the current symbol
-		//Move the current bit to the next symbol		
-                printf("Reached end of table, counter is = %d\n", counter);
+            if( phase >= symbol_length){ 
+        		//Reached the end of the current symbol, play the next symbol
+                //printf("Reached end of table, counter is = %d\n", counter);
         		//Reset the sinusoid
+                if((unsigned)counter >= msg_size)
+                    toggle = 0;
+
         		phase -= symbol_length;
         		
-        		// if(FSK_symbol != inputbuffer[counter] - '0')
-
-        		// 	//printf("Output flipped!\n");
-
-        		// FSK_symbol = inputbuffer[counter] - '0';
-          //       //Counter will keep looping the message
-          //       counter = (counter + 1)%msg_size;
+        		FSK_symbol = inputbuffer[counter] - '0';
+                //Counter will keep looping the message
+                counter++;
 
 
-                FSK_symbol = testInput[counter];
-                counter = (counter + 1) %framesPerBuffer;
+                //  printf("%d", FSK_symbol);
+                // FSK_symbol = testInput[counter+1];
+                // counter = counter + 1 %framesPerBuffer;
                 //printf("Output symbol: %d, %d symbols left to print\n", FSK_symbol, msg_size - counter );
 
 	             }
