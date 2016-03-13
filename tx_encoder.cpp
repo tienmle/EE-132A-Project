@@ -5,7 +5,7 @@
 //The design was taken from http://users.ece.utexas.edu/~gerstl/ee382v-ics_f09/lectures/Viterbi.pdf
 #include <cstring>
 #include <stdio.h>
-#include "txEncoder.h"
+#include "tx_encoder.h"
 
 	encoder::encoder(){
 		return;

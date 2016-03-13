@@ -7,17 +7,17 @@ TARGET = audiomodem
 
 default: $(TARGET)
 
-$(TARGET): main.o waveformGen.o txEncoder.o libportaudio.a
-	$(CC) $(CFLAGS) main.o waveformGen.o txEncoder.o libportaudio.a  -lrt -lm -lasound -pthread -o $(TARGET)
+$(TARGET): main.o tx_waveformGen.o tx_encoder.o libportaudio.a
+	$(CC) $(CFLAGS) main.o tx_waveformGen.o tx_encoder.o libportaudio.a  -lrt -lm -lasound -pthread -o $(TARGET)
 
-main.o: main.cpp waveformGen.h
+main.o: main.cpp tx_waveformGen.h
 	$(CC) $(CFLAGS) -c main.cpp
 
-waveformGen.o:
-	$(CC) $(CFLAGS) -c waveformGen.cpp
+tx_waveformGen.o:
+	$(CC) $(CFLAGS) -c tx_waveformGen.cpp
 
-txEncoder.o:
-	$(CC) $(CFLAGS) -c txEncoder.cpp
+tx_encoder.o:
+	$(CC) $(CFLAGS) -c tx_encoder.cpp
 
 clean:
 	$(RM) $(TARGET) *.o *~

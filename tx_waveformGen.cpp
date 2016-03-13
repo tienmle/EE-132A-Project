@@ -6,14 +6,7 @@
 //Waveform mapping using FSK Modulation
 //Take a carrier sinusoid and modulate its phase depending on whether the input bit is a 1 or a 0
 
-#include <stdio.h>
-#include <math.h>
-#include "portaudio.h"
-#include "waveformGen.h"
-#include <cassert>
-#include <string>
-#include <cstring>
-#include <iostream>
+#include "tx_waveformGen.h"
 
     FSK_modulator::FSK_modulator(std::string binarymessage) : stream(0), phase(0), toggle(1)
     {
@@ -23,8 +16,8 @@
         for( int i=0; i<TABLE_SIZE; i++ )
         {
             //printf("i = %d\n", i);
-            sine1[i] = (float)(AMPLITUDE1 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 900. ));
-            sine0[i] = (float)(AMPLITUDE0 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* 400.));
+            sine1[i] = (float)(AMPLITUDE1 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_1 ));
+            sine0[i] = (float)(AMPLITUDE0 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_0 ));
         }
 
         //Generate the container for the message to be sent
@@ -36,14 +29,14 @@
         tx_message[binarymessage.length()] = '\0';
         msg_size = strlen(tx_message);
 
-        printf( "Size of message: %u\n", msg_size);
-        printf(tx_message);
+        //printf( "Size of message: %u\n", msg_size);
+        //printf(tx_message);
         printf("\n");
 
         char* tx_encoded_message = new char[2*strlen(tx_message)+4];
         encoder::conv12Encoder(tx_message, tx_encoded_message);
-        printf("%s", tx_encoded_message);
-        printf( "\nSize of message: %u\n", (unsigned)strlen(tx_encoded_message));
+        //printf("%s", tx_encoded_message);
+        //printf( "\nSize of message: %u\n", (unsigned)strlen(tx_encoded_message));
 
         //Initialization of the output state
         FSK_symbol = tx_message[0] - '0';

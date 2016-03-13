@@ -2,8 +2,16 @@
 #define WAVEFORMGEN_H
 
 #include "portaudio.h"
-#include "txEncoder.h"
+#include "tx_encoder.h"
+#include "tx_waveformGen.h"
+
+#include <stdio.h>
+#include <iostream>
+#include <math.h>
+#include <cassert>
+
 #include <string>
+#include <cstring>
 
 #define FRAMES_PER_BUFFER  (128)
 
@@ -13,6 +21,8 @@
 #define AMPLITUDE0 0.7
 #define AMPLITUDE1 9
 #define SYMBOLS_PER_SECOND 24
+#define FREQ_0 400.
+#define FREQ_1 900.
 
 
 #ifndef M_PI

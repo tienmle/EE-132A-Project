@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "portaudio.h"
-#include "waveformGen.h"
+#include "tx_waveformGen.h"
 
 //For transforming ASCII text into binary
 #include <string>
