@@ -2,6 +2,7 @@
 #define WAVEFORMGEN_H
 
 #include "portaudio.h"
+#include "txEncoder.h"
 #include <string>
 
 #define FRAMES_PER_BUFFER  (128)

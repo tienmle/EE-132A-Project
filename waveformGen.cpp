@@ -38,6 +38,13 @@
 
         printf( "Size of message: %u\n", msg_size);
         printf(tx_message);
+        printf("\n");
+
+        char* tx_encoded_message = new char[2*strlen(tx_message)+4];
+        encoder::conv12Encoder(tx_message, tx_encoded_message);
+        printf("%s", tx_encoded_message);
+        printf( "\nSize of message: %u\n", (unsigned)strlen(tx_encoded_message));
+
         //Initialization of the output state
         FSK_symbol = tx_message[0] - '0';
         counter = 1;
