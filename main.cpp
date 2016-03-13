@@ -42,17 +42,13 @@ int main(int argc, char* argv[])
     while(getline(file,temp)){
         message += '\n' + temp;
     }
-    //cout << message << endl;
-
     //Take message from string and transform into binary (ASCII)
     string binary_message; // raw text data
 
     for (std::size_t i = 0; i < message.size(); i++){
         bitset<8> bit_string(message.c_str()[i]);
         binary_message += bit_string.to_string();
-        //cout << binary_message << endl;
     }
-
 
     //Test code to sanity check turning string file into bits
     assert(binary_message.size() % 8 == 0); //Sanity check
@@ -60,13 +56,13 @@ int main(int argc, char* argv[])
     //Now back to ASCII
     for(std::size_t i = 0; i < binary_message.size(); i += 8){
         std::bitset<8> char_msg(binary_message.substr(i, i+7));
-        //cout << char(char_msg.to_ulong()) << endl;
         recovered_message += char(char_msg.to_ulong());
     }
     //cout << recovered_message << endl;
 
     // PortAudio Code
-    printf("PortAudio: output FSK Signal. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+    printf("PortAudio: output FSK Signal. Sample rate = %d, BufSize = %d\nMessage Size:%u\n", 
+        SAMPLE_RATE, FRAMES_PER_BUFFER, (unsigned)message.size());
 
     PaError err;
     FSK_modulator fsk(binary_message);
@@ -77,18 +73,17 @@ int main(int argc, char* argv[])
     if (fsk.open(Pa_GetDefaultOutputDevice()))
     {
         if (fsk.start())
-        {
-            printf("Play for %d seconds.\n", NUM_SECONDS );
-            Pa_Sleep( NUM_SECONDS * 1000 );
+            {
+                while(fsk.IsStreamActive() == 1)
+                    Pa_Sleep(100);
+            }
 
-            fsk.stop();
-        }
-
+        fsk.stop();
         fsk.close();
     }
 
     Pa_Terminate();
-    printf("Test finished.\n");
+    printf("Transmission finished.\n");
     
     return err;
 

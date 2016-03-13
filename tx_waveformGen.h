@@ -23,7 +23,7 @@
 #define SYMBOLS_PER_SECOND 24
 #define FREQ_0 400.
 #define FREQ_1 900.
-
+#define PREAMBLE_SIZE 12
 
 #ifndef M_PI
 #define M_PI  (3.14159265)
@@ -35,7 +35,8 @@ class FSK_modulator{
 public:
 	FSK_modulator(std::string binary_message);
 	~FSK_modulator();
-	bool open(PaDeviceIndex index);		
+	bool open(PaDeviceIndex index);	
+	bool IsStreamActive();
 	bool close();
 	bool start();
 	bool stop();
@@ -65,6 +66,7 @@ private:
 	
 
 	//Message Variable (stored as a C-string)
+	char* tx_preamble;
 	char* tx_message;
 	size_t msg_size;
 	size_t tx_pos;
@@ -76,7 +78,7 @@ private:
 	int phase;
 	
 	//FSK Implementation
-	int toggle;
+	int state;
 	int counter;
 	bool FSK_symbol;
 
