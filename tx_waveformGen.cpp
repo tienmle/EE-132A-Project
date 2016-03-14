@@ -16,8 +16,8 @@
         for( int i=0; i<TABLE_SIZE; i++ )
         {
             //printf("i = %d\n", i);
-            sine1[i] = (float)(AMPLITUDE1 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_1 ));
-            sine0[i] = (float)(AMPLITUDE0 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_0 ));
+            sine1[i] = (float)(AMPLITUDE1 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_1 * 0.5 ));
+            sine0[i] = (float)(AMPLITUDE0 * sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.* FREQ_0 * 0.5 ));
         }
 
         //Create data structure for holding the encoded message
@@ -49,8 +49,9 @@
         counter = 1;
 
         //DEBUGGING 
-        printf("Preamble\n%s", tx_preamble);
-        printf( "\nSize of preamble message: %u\n", (unsigned)strlen(tx_preamble));
+        // printf("Preamble\n%s", tx_preamble);
+        // printf( "\nSize of preamble message: %u\n", (unsigned)strlen(tx_preamble));
+        // printf("%s\n", binarymessage.c_str());
 
         printf("%s", tx_message);
         printf( "\nSize of encoded message message: %u\n", (unsigned)strlen(tx_message));
@@ -243,18 +244,6 @@
 
                 //printf("Reached end of table, counter is = %d\n", counter);
 
-                if( state == 2)
-                {
-                    if( (unsigned)counter == PREAMBLE_SIZE )
-                    {
-                        state = 1;
-                        FSK_symbol = tx_message[0] - '0';
-                        counter = 1;
-                    }
-                    phase -= symbol_length;
-                    FSK_symbol = tx_preamble[counter] - '0';
-                    counter++;
-                }
                 if( state == 1 ) 
                 {
                     if( (unsigned)counter > msg_size )
@@ -266,6 +255,20 @@
                     counter++;
                 }
 
+                if( state == 2)
+                {
+                    if( (unsigned)counter == PREAMBLE_SIZE )
+                    {
+                        state = 1;
+                        FSK_symbol = tx_message[0] - '0';
+                        phase -= symbol_length;
+                        counter = 1;
+                        break;
+                    }
+                    phase -= symbol_length;
+                    FSK_symbol = tx_preamble[counter] - '0';
+                    counter++;
+                }
                 // printf("%d", FSK_symbol);
                 // FSK_symbol = testInput[counter+1];
                 // counter = counter + 1 %framesPerBuffer;

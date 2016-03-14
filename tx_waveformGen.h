@@ -21,8 +21,8 @@
 #define AMPLITUDE0 0.7
 #define AMPLITUDE1 9
 #define SYMBOLS_PER_SECOND 24
-#define FREQ_0 400.
-#define FREQ_1 900.
+#define FREQ_0 800.
+#define FREQ_1 1800.
 #define PREAMBLE_SIZE 12
 
 #ifndef M_PI

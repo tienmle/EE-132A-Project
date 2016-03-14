@@ -10,8 +10,8 @@ import sys
 # CONSTANTS
 order = 3
 cutoff = 1400;
-freq1 = 900
-freq0 = 400
+freq1 = 1800
+freq0 = 800
 
 symbols_per_second = 24
 sample_time_ms = 1000/symbols_per_second
@@ -76,11 +76,25 @@ def plot_freqDomain(data, fs, figTitle, figNum):
 def FSK_decision(signal, fs, freq0, freq1):
 	t = np.linspace(0, len(signal)/float(fs), num=len(signal))
 	order=6
-	cos_mix1 = np.cos(freq0*2*np.pi*t)
-	sin_mix1 = np.sin(freq0*2*np.pi*t)
+	cos_mix0 = np.cos(freq0*2*np.pi*t)
+	sin_mix0 = np.sin(freq0*2*np.pi*t)
 
-	# plot_timeDomain(t, signal, "Plot of signal of " + filename + " in time domain", 3)
-	# plot_freqDomain(signal, fs, "Plot of signal of " + filename + " in frequency domain", 4)
+	# plot_timeDomain(t, signal, "Plot of signal of " + filename + " in time domain", 3, 0,)
+	# plot_freqDomain(signal, fs, "Plot of signal of " + filename + " in frequency domain", 8)
+
+	i_0 = signal * cos_mix0
+	q_0 = signal * sin_mix0
+
+	i_0 = butter_lowpass_filter(i_0, 300, 2*fs, order)
+	q_0 = butter_lowpass_filter(q_0, 300, 2*fs, order)
+
+	i_sum0 = scipy.integrate.simps(abs(i_0))
+	q_sum0 = scipy.integrate.simps(abs(q_0))
+
+	Amplitude0 = np.sqrt(i_sum0**2 + q_sum0**2)
+
+	cos_mix1 = np.cos(freq1*2*np.pi*t)
+	sin_mix1 = np.sin(freq1*2*np.pi*t)
 
 	i_1 = signal * cos_mix1
 	q_1 = signal * sin_mix1
@@ -88,35 +102,21 @@ def FSK_decision(signal, fs, freq0, freq1):
 	i_1 = butter_lowpass_filter(i_1, 300, 2*fs, order)
 	q_1 = butter_lowpass_filter(q_1, 300, 2*fs, order)
 
+	# plot_timeDomain(t, i_0, "i_0", 6, 0, 0.05 )
+	# plot_freqDomain(i_0, fs, "i_0", 7)
+
+	# plot_timeDomain(t, i_1, "i_1", 4, 0, 0.05 )
+	# plot_freqDomain(i_1, fs, "i_1", 5)
+
 	i_sum1 = scipy.integrate.simps(abs(i_1))
 	q_sum1 = scipy.integrate.simps(abs(q_1))
 
 	Amplitude1 = np.sqrt(i_sum1**2 + q_sum1**2)
 
-	cos_mix2 = np.cos(freq1*2*np.pi*t)
-	sin_mix2 = np.sin(freq1*2*np.pi*t)
-
-	i_2 = signal * cos_mix2
-	q_2 = signal * sin_mix2
-
-	i_2 = butter_lowpass_filter(i_2, 300, 2*fs, order)
-	q_2 = butter_lowpass_filter(q_2, 300, 2*fs, order)
-
-	# plot_timeDomain(t, i_1, "i_1", 6 )
-	# plot_freqDomain(i_1, fs, "i_1", 7)
-
-	# plot_timeDomain(t, i_2, "i_2", 4 )
-	# plot_freqDomain(i_2, fs, "i_2", 5)
-
-	i_sum2 = scipy.integrate.simps(abs(i_2))
-	q_sum2 = scipy.integrate.simps(abs(q_2))
-
-	Amplitude2 = np.sqrt(i_sum2**2 + q_sum2**2)
-
+	# print "Amplitude 0: " + str(Amplitude0)
 	# print "Amplitude 1: " + str(Amplitude1)
-	# print "Amplitude 2: " + str(Amplitude2)
 
-	out = Amplitude1 - Amplitude2
+	out = Amplitude0 - Amplitude1
 	if out > 0:
 		res = 0
 	if out < 0:
@@ -175,17 +175,26 @@ y = butter_lowpass_filter(data, cutoff, fs, order)
 y_norm = normalize_signal(y)
 
 start, end = trim_waveform(y_norm, fs)
-print start, end
 y_trimmed = y_norm[start:end]
 y_time = np.linspace(0, len(y_trimmed)/(fs), num=len(y_trimmed))
 
 #break the signal into its constituent samples
 sampled_data = sample(y_trimmed, fs, sample_time_ms)
+remainder8 = len(sampled_data) % 8
+
+if remainder8 > 0:
+	samples_per_symbol = fs/symbols_per_second
+	if remainder8 >= 4:
+		for i in range(8-remainder8):
+			sampled_data.append(y_trimmed[-1-samples_per_symbol:-1])
+	else:
+		sampled_data = sampled_data[:-remainder8]
+
 print np.shape(sampled_data)
 
 
 # plot_timeDomain(Time, data, "Plot of unfiltered signal of " + filename + " in time domain", 0)
-plot_timeDomain(y_time, y_trimmed, "Plot of filtered signal of " + filename + " in time domain", 1, 0, len(y_trimmed)/(fs))
+# plot_timeDomain(y_time, y_trimmed, "Plot of filtered signal of " + filename + " in time domain", 1, 0.3, 0.9)
 # #Plot of frequency spectrum of original file
 # plot_freqDomain(data, fs, "Frequency Spectrum of " + filename + " without filtering", 2)
 # plot_freqDomain(y_norm, fs, "Frequency Spectrum of " + filename + " with filtering", 3)
@@ -199,5 +208,4 @@ with open('rx_msg.txt', 'w') as f:
 	for n in range(len(sampled_data)):
 		result.append(FSK_decision(sampled_data[n], fs, freq0, freq1))
 		print >> f, result[n]
-	print >> f, 1
-plt.show()
+# plt.show()

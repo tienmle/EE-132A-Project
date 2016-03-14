@@ -51,13 +51,13 @@ int main(int argc, char* argv[])
     }
 
     //Test code to sanity check turning string file into bits
-    assert(binary_message.size() % 8 == 0); //Sanity check
-    string recovered_message;
-    //Now back to ASCII
-    for(std::size_t i = 0; i < binary_message.size(); i += 8){
-        std::bitset<8> char_msg(binary_message.substr(i, i+7));
-        recovered_message += char(char_msg.to_ulong());
-    }
+    // assert(binary_message.size() % 8 == 0); //Sanity check
+    // string recovered_message;
+    // //Now back to ASCII
+    // for(std::size_t i = 0; i < binary_message.size(); i += 8){
+    //     std::bitset<8> char_msg(binary_message.substr(i, i+7));
+    //     recovered_message += char(char_msg.to_ulong());
+    // }
     //cout << recovered_message << endl;
 
     // PortAudio Code
