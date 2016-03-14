@@ -3,7 +3,7 @@ CC = g++
 #compiler flags
 CFLAGS = -g -Wall
 
-TARGET = audiomodem
+TARGET = fsk_transmitter
 
 default: $(TARGET)
 

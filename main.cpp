@@ -38,7 +38,9 @@ int main(int argc, char* argv[])
 
     string message;
     string temp;
-
+    if(getline(file,temp)){
+        message = temp;
+    }
     while(getline(file,temp)){
         message += '\n' + temp;
     }
